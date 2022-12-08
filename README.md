@@ -1,0 +1,1 @@
+# Segmentationof-pelvic-bone-in-CT
