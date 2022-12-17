@@ -8,17 +8,17 @@ def est_lin_transf(fix_img, mov_img, fix_mask):
 
     Parameters
     ----------
-    fix_img : str
-        The Path of the reference image
-    mov_img : str
-        The path of the moving image
-    fix_mask : str
-        The path of the mask of reference image
+    fix_img : Image
+        The reference image
+    mov_img : Image
+        The moving image
+    fix_mask : Image
+        The mask of reference image
 
     Returns
     -----------
-    final_transform : dics
-        The dictonary contains all the transformation parameters
+    final_transform : Transform (SITK.Transform)
+        The esmated transformation
 
     """
 
@@ -45,6 +45,7 @@ def est_lin_transf(fix_img, mov_img, fix_mask):
                                                       numberOfIterations=100, 
                                                       convergenceMinimumValue=1e-6,
                                                       convergenceWindowSize=10)
+
     registration_method.SetOptimizerScalesFromPhysicalShift()
 
     # Setup for the multi-resolution framework
@@ -60,22 +61,37 @@ def est_lin_transf(fix_img, mov_img, fix_mask):
                                                   sitk.Cast(mov_img, sitk.sitkFloat32))
 
     print("--------")
-    print("Affine registration:")
-    print('Final metric value: {0}'.format(registration_method.GetMetricValue()))
+    print("Linear registration:")
+    print('Final mean squares value: {0}'.format(registration_method.GetMetricValue()))
     print("Optimizer stop condition: {0}".format(registration_method.GetOptimizerStopConditionDescription()))
     print("Number of iterations: {0}".format(registration_method.GetOptimizerIteration()))
     print("--------")
     return final_transform
 
 
-def apply_lin_transf(fix_img, mov_img, lin_transf, is_label=False):
+def apply_lin_transf(fix_img, mov_img, lin_transf):
+
     """
-    Apply given linear transform `lin_transf` to `mov_img` and return
-    the transformed image.
+    This function is used to apply the esmated linear transformation to mov_img.
+
+    Parameters
+    ----------
+    fix_img : Image
+        The reference image
+    mov_img : Image
+        The moving image
+    lin_tranf : Transform
+        The estmated transform
+
+    Returns
+    -----------
+    mov_img_resampled : Image
+        The resampled moving image from linear transformation
+
     """
-    # only supports images with sitkFloat32 and sitkFloat64 pixel types
-    fix_img = sitk.Cast(fix_img, sitk.sitkFloat32)
-    mov_img = sitk.Cast(mov_img, sitk.sitkFloat32)
+    # # only supports images with sitkFloat32 and sitkFloat64 pixel types
+    # fix_img = sitk.Cast(fix_img, sitk.sitkFloat32)
+    # mov_img = sitk.Cast(mov_img, sitk.sitkFloat32)
 
     # resample moving image
     resampler = sitk.ResampleImageFilter()
@@ -83,18 +99,16 @@ def apply_lin_transf(fix_img, mov_img, lin_transf, is_label=False):
     # set the reference image
     resampler.SetReferenceImage(fix_img)
 
-    # use a linear interpolator
-    if is_label:
-        resampler.SetInterpolator(sitk.sitkNearestNeighbor)
-    else:
-        resampler.SetInterpolator(sitk.sitkLinear)
+    # set a linear interpolator
+    resampler.SetInterpolator(sitk.sitkLinear)
 
     # set the desired transformation
     resampler.SetTransform(lin_transf)
 
     mov_img_resampled = resampler.Execute(mov_img)
-    mov_img_resampled_data = sitk.GetArrayFromImage(mov_img_resampled)
     return mov_img_resampled
+
+
 
 def est_nl_transf(fix_img, mov_img,fix_mask,print_log=False):
     """
