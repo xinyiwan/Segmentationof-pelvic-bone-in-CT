@@ -32,7 +32,7 @@ def est_lin_transf(fix_img, mov_img, fix_mask):
     registration_method.SetMetricAsMeanSquares()
     # registration_method.SetMetricAsMattesMutualInformation(numberOfHistogramBins=50)
     registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
-    registration_method.SetMetricSamplingPercentage(0.01)
+    registration_method.SetMetricSamplingPercentage(0.001)
 
     # set the mask on which you are going to evaluate the similarity between the two images
     registration_method.SetMetricFixedMask(fix_mask)
@@ -110,10 +110,24 @@ def apply_lin_transf(fix_img, mov_img, lin_transf):
 
 
 
-def est_nl_transf(fix_img, mov_img,fix_mask,print_log=False):
+def est_nl_transf(fix_img, mov_img, fix_mask):
     """
-    Estimate non-linear transform to align `im_mov` to `im_ref` and
-    return the transform parameters.
+    This function is used to estimated the nonlinear transformation from mov_img to fix_img.
+
+    Parameters
+    ----------
+    fix_img : Image
+        The reference image
+    mov_img : Image
+        The moving image
+    fix_mask : Image
+        The mask of reference image
+
+    Returns
+    -----------
+    final_transform : Transform (SITK.Transform)
+        The esmated transformation
+
     """
 
     # initialize the registration
@@ -124,21 +138,22 @@ def est_nl_transf(fix_img, mov_img,fix_mask,print_log=False):
     transform_to_displacement_field_filter.SetReferenceImage(fix_img)
     initial_transform = sitk.DisplacementFieldTransform(transform_to_displacement_field_filter.Execute(sitk.Transform()))
 
-    #  regularization. The update field refers to fluid regularization; the total field to elastic regularization.
+    #  regularization. 
+    #  The update field refers to fluid regularization; the total field to elastic regularization.
     initial_transform.SetSmoothingGaussianOnUpdate(varianceForUpdateField=0.0, varianceForTotalField=2.0)
 
     # set the initial transformation
     reg_method.SetInitialTransform(initial_transform)
 
     # use the function 'SetMetricAsDemons' to be able to perform Demons registration.
-    # Be aware that you will need to provide a parameter (the intensity difference threshold) as input:
+    # Provide a parameter (the intensity difference threshold) as input:
     # during the registration, intensities are considered to be equal if their difference is less than the given threshold.
-    reg_method.SetMetricAsDemons(0.01)
+    reg_method.SetMetricAsDemons(1)
 
     # evaluate the metrics only in the mask, if provided as an input
     reg_method.SetMetricFixedMask(fix_mask)
 
-    # Multi-resolution framework.
+    # Multi-resolution framework
     reg_method.SetShrinkFactorsPerLevel(shrinkFactors = [4,2,1])
     reg_method.SetSmoothingSigmasPerLevel(smoothingSigmas=[8,4,0])
 
@@ -146,25 +161,41 @@ def est_nl_transf(fix_img, mov_img,fix_mask,print_log=False):
     reg_method.SetInterpolator(sitk.sitkLinear)
 
     # set a gradient descent optimizer
-    reg_method.SetOptimizerAsGradientDescent(learningRate=0.5, numberOfIterations=40, convergenceMinimumValue=1e-6,
+    reg_method.SetOptimizerAsGradientDescent(learningRate=0.5, numberOfIterations=50, convergenceMinimumValue=1e-6,
                                              convergenceWindowSize=10)
     reg_method.SetOptimizerScalesFromPhysicalShift()
 
-    if print_log:
-        print("--------")
-        print("Demons registration:")
-        print('Final metric value: {0}'.format(reg_method.GetMetricValue()))
-        print("Optimizer stop condition: {0}".format(reg_method.GetOptimizerStopConditionDescription()))
-        print("Number of iterations: {0}".format(reg_method.GetOptimizerIteration()))
-        print("--------")
-    return reg_method.Execute(sitk.Cast(fix_img, sitk.sitkFloat32), sitk.Cast(mov_img, sitk.sitkFloat32))
+    # perform registration
+    final_transform = reg_method.Execute(sitk.Cast(fix_img, sitk.sitkFloat32),
+                                                  sitk.Cast(mov_img, sitk.sitkFloat32))
 
-def apply_nl_transf(fix_img, mov_img, nl_transf, is_label=False):
+    print("--------")
+    print("Demons registration:")
+    print('Final metric value: {0}'.format(reg_method.GetMetricValue()))
+    print("Optimizer stop condition: {0}".format(reg_method.GetOptimizerStopConditionDescription()))
+    print("Number of iterations: {0}".format(reg_method.GetOptimizerIteration()))
+    print("--------")    
+    return final_transform
+
+def apply_nl_transf(fix_img, mov_img, nl_transf):
     """
-    Apply given non-linear transform `nl_xfm` to `im_mov` and return
-    the transformed image."""
-    if is_label:
-        output = sitk.Resample(mov_img, fix_img, nl_transf, sitk.sitkNearestNeighbor, 0.0, mov_img.GetPixelID())
-    else:
-        output = sitk.Resample(mov_img, fix_img, nl_transf, sitk.sitkLinear, 0.0, mov_img.GetPixelID())
+    This function is used to apply the esmated linear transformation to mov_img.
+
+    Parameters
+    ----------
+    fix_img : Image
+        The reference image
+    mov_img : Image
+        The moving image
+    nl_tranf : Transform
+        The estmated nonlinear transform
+
+    Returns
+    -----------
+    output : Image
+        The resampled moving image from nonlinear transformation
+
+    """
+    output = sitk.Resample(mov_img, fix_img, nl_transf, sitk.sitkNearestNeighbor, 0.0, mov_img.GetPixelID())
+
     return output
