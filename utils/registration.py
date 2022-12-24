@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import SimpleITK as sitk
 
-def est_lin_transf(fix_img, mov_img, fix_mask):
+def est_lin_transf(fix_img, fix_mask, mov_img):
 
     """
     This function is used to estimated the linear transformation from mov_img to fix_img.
