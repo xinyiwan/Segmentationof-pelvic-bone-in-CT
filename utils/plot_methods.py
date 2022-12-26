@@ -9,7 +9,7 @@ def plot_lin_transf(fix_img, fix_mask, mov_img, resampled_mov_img, idx):
     mov_img_data = sitk.GetArrayFromImage(mov_img)
     resampled_mov_img_data = sitk.GetArrayFromImage(resampled_mov_img)
 
-    plt.figure(figsize=(20,60))
+    plt.figure(figsize=(15,45))
     plt.subplot(131)
     plt.imshow(fix_img_data[idx], cmap='Blues') # fixed image
     plt.imshow(fix_mask_data[idx], cmap = 'Reds', alpha = 0.5)
@@ -23,6 +23,6 @@ def plot_lin_transf(fix_img, fix_mask, mov_img, resampled_mov_img, idx):
     plt.subplot(133)
     plt.imshow(fix_img_data[idx], cmap='Blues') # fixed image
     plt.imshow(resampled_mov_img_data[idx], cmap = 'Reds', alpha = 0.5)
-    plt.title('Reference image and moving image')
+    plt.title('Reference image and linear transformed moving image')
 
     plt.show()
