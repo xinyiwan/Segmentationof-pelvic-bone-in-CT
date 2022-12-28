@@ -23,21 +23,22 @@ def extract_masks(masks_path, mask_labels):
     for path in masks_path:
 
         mask_image = sitk.ReadImage(path,sitk.sitkFloat32)
-        mask_data = sitk.GetArrayFromImage(mask_image)
+        or_filter = sitk.OrImageFilter()
 
-        new_mask_data = np.zeros_like(mask_data)
-        
         info = ".nii.gz"
-        for i in mask_labels:
-            new_mask_data[np.where(mask_data==i)]=i
-            info = "_" + str(i) + info
+        for i in range(len(mask_labels)):
+            mask_tmp = sitk.BinaryThreshold(mask_image, lowerThreshold=(mask_labels[i]-0.5), upperThreshold=(mask_labels[i]+0.5), insideValue=mask_labels[i], outsideValue=0)
+            if i > 0:
+                mask = or_filter.Execute(mask, mask_tmp)
+            else:
+                mask = mask_tmp
+            info = "_" + str(mask_labels[i]) + info
         
-        new_mask_image = sitk.GetImageFromArray(new_mask_data)
         writer = sitk.ImageFileWriter()
         writer.SetImageIO("NiftiImageIO")
         path = path.replace(".nii.gz",info)
         writer.SetFileName(path)
-        writer.Execute(new_mask_image)
+        writer.Execute(mask)
         print("The new mask is saved as '{}'.".format(path))
 
 def binarize(mask_img):

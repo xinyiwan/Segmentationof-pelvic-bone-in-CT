@@ -148,7 +148,7 @@ def est_nl_transf(fix_img, mov_img, fix_mask):
     # use the function 'SetMetricAsDemons' to be able to perform Demons registration.
     # Provide a parameter (the intensity difference threshold) as input:
     # during the registration, intensities are considered to be equal if their difference is less than the given threshold.
-    reg_method.SetMetricAsDemons(1)
+    reg_method.SetMetricAsDemons(0.01)
 
     # evaluate the metrics only in the mask, if provided as an input
     reg_method.SetMetricFixedMask(fix_mask)
@@ -199,3 +199,16 @@ def apply_nl_transf(fix_img, mov_img, nl_transf):
     output = sitk.Resample(mov_img, fix_img, nl_transf, sitk.sitkNearestNeighbor, 0.0, mov_img.GetPixelID())
 
     return output
+
+
+def seg_atlas(atlas_seg_list): 
+    """
+    Apply atlas-based segmentation of `im` using the list of CT images in `atlas_ct_list` 
+    and the corresponding segmentation masks in `atlas_seg_list`. 
+    Return the resulting segmentation mask after majority voting.
+    """
+    labelForUndecidedPixels = 10
+    reference_segmentation= sitk.LabelVoting(atlas_seg_list, labelForUndecidedPixels)
+
+    return reference_segmentation
+
