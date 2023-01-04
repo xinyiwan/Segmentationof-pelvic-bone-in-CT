@@ -148,7 +148,7 @@ def est_nl_transf(fix_img, mov_img, fix_mask):
     # use the function 'SetMetricAsDemons' to be able to perform Demons registration.
     # Provide a parameter (the intensity difference threshold) as input:
     # during the registration, intensities are considered to be equal if their difference is less than the given threshold.
-    reg_method.SetMetricAsDemons(0.01)
+    reg_method.SetMetricAsDemons(10)
 
     # evaluate the metrics only in the mask, if provided as an input
     reg_method.SetMetricFixedMask(fix_mask)
@@ -161,8 +161,11 @@ def est_nl_transf(fix_img, mov_img, fix_mask):
     reg_method.SetInterpolator(sitk.sitkLinear)
 
     # set a gradient descent optimizer
-    reg_method.SetOptimizerAsGradientDescent(learningRate=0.5, numberOfIterations=50, convergenceMinimumValue=1e-6,
+    reg_method.SetOptimizerAsGradientDescent(learningRate=0.5, 
+                                             numberOfIterations=50, 
+                                             convergenceMinimumValue=1e-6,
                                              convergenceWindowSize=10)
+                                             
     reg_method.SetOptimizerScalesFromPhysicalShift()
 
     # perform registration
