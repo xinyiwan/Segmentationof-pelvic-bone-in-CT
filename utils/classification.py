@@ -48,7 +48,7 @@ def model(img_ch, img_width, img_height, n_base):
     model.summary()   
     return model
 
-def train_classifier(im_list, labels_list, learning_rate, n_epochs): 
+def train_classifier(train_img, train_labels, val_img, val_labels, learning_rate, n_epochs): 
     """
     Receive a list of images `im_list` and a list of vectors (one per image) 
     with the labels 0 or 1 depending on the sagittal 2D slice contains or not 
@@ -62,9 +62,10 @@ def train_classifier(im_list, labels_list, learning_rate, n_epochs):
               optimizer = Adam(lr = learning_rate),
               metrics = ['accuracy'])
     
-    History = MLP.fit(im_list, labels_list, 
+    history = MLP.fit(train_img, train_labels, 
                       batch_size = batch_size,
+                      validation_data = (val_img, val_labels),
                       epochs = n_epochs, verbose=1)
     
-    return MLP
+    return MLP, history
 

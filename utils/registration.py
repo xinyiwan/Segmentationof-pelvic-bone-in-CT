@@ -93,20 +93,22 @@ def apply_lin_transf(fix_img, mov_img, lin_transf):
     # fix_img = sitk.Cast(fix_img, sitk.sitkFloat32)
     # mov_img = sitk.Cast(mov_img, sitk.sitkFloat32)
 
-    # resample moving image
-    resampler = sitk.ResampleImageFilter()
+    # # resample moving image
+    # resampler = sitk.ResampleImageFilter()
 
-    # set the reference image
-    resampler.SetReferenceImage(fix_img)
+    # # set the reference image
+    # resampler.SetReferenceImage(fix_img)
 
-    # set a linear interpolator
-    resampler.SetInterpolator(sitk.sitkLinear)
+    # # set a linear interpolator
+    # resampler.SetInterpolator(sitk.sitkLinear)
 
-    # set the desired transformation
-    resampler.SetTransform(lin_transf)
+    # # set the desired transformation
+    # resampler.SetTransform(lin_transf)
 
-    mov_img_resampled = resampler.Execute(mov_img)
-    return mov_img_resampled
+    # mov_img_resampled = resampler.Execute(mov_img)
+
+    output = sitk.Resample(mov_img, fix_img, lin_transf, sitk.sitkLinear, 0.0, mov_img.GetPixelID())
+    return output
 
 
 
@@ -165,7 +167,7 @@ def est_nl_transf(fix_img, mov_img, fix_mask):
                                              numberOfIterations=50, 
                                              convergenceMinimumValue=1e-6,
                                              convergenceWindowSize=10)
-                                             
+
     reg_method.SetOptimizerScalesFromPhysicalShift()
 
     # perform registration
@@ -199,7 +201,7 @@ def apply_nl_transf(fix_img, mov_img, nl_transf):
         The resampled moving image from nonlinear transformation
 
     """
-    output = sitk.Resample(mov_img, fix_img, nl_transf, sitk.sitkNearestNeighbor, 0.0, mov_img.GetPixelID())
+    output = sitk.Resample(mov_img, fix_img, nl_transf, sitk.sitkLinear, 0.0, mov_img.GetPixelID())
 
     return output
 

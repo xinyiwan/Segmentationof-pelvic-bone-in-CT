@@ -41,5 +41,4 @@ def normalize(input):
     min = np.min(input_data)
     max = np.max(input_data)
     input_data = (input_data - min) / (max - min) * 256.0
-    input_data = input_data.astype(uint8)
     return sitk.GetImageFromArray(input_data)
